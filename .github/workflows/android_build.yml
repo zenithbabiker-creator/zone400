@@ -96,13 +96,13 @@ EOF
           sed -i 's/isFrozen = .*,//g' "$STEP1_PATH"
           sed -i 's/onPlaneTap =/onTap =/g' "$STEP1_PATH"
           
-          # تم إصلاح الهروب هنا باستخدام $$ لمنع أخطاء صياغة YAML في الـ Workflow
-          sed -i 's/\$$captured_area_label/0.0/g' "$STEP1_PATH"
-          sed -i 's/\$$points_count_label/0/g' "$STEP1_PATH"
+          # تم استبدال الرموز بـ التعبيرات النمطية (Regex) لضمان قبول ملف الـ YAML فوراً
+          sed -i 's/..captured_area_label/0.0/g' "$STEP1_PATH"
+          sed -i 's/..points_count_label/0/g' "$STEP1_PATH"
           sed -i 's/clearBoundary()/{}/g' "$STEP1_PATH"
           sed -i 's/toggleFrameFreeze()/{}/g' "$STEP1_PATH"
-          sed -i 's/\$$btn_unfreeze_frame/Unfreeze/g' "$STEP1_PATH"
-          sed -i 's/\$$btn_freeze_frame/Freeze/g' "$STEP1_PATH"
+          sed -i 's/..btn_unfreeze_frame/Unfreeze/g' "$STEP1_PATH"
+          sed -i 's/..btn_freeze_frame/Freeze/g' "$STEP1_PATH"
           sed -i 's/isFrameFrozen/false/g' "$STEP1_PATH"
         fi
 
