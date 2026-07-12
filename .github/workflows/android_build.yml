@@ -28,17 +28,19 @@ jobs:
         cd "$PROJECT_DIR"
         echo "Project found in: $PROJECT_DIR"
 
-        # 2. إذا لم يكن gradlew موجوداً، سنقوم بتوليده فوراً
+        # 2. التأكد من وجود ملف gradlew وتوليده إذا كان مفقوداً
         if [ ! -f "gradlew" ]; then
-          echo "gradlew not found. Generating wrapper..."
           gradle wrapper --gradle-version 8.7
         fi
         
         # 3. التأكد من صلاحية التنفيذ
         chmod +x gradlew
 
-        # 4. بناء المشروع
-        ./gradlew assembleDebug --no-daemon
+        # 4. بناء المشروع مع تمرير إعدادات AndroidX مباشرة إلى Gradle
+        # تفعيل useAndroidX و enableJetifier كـ System Properties
+        ./gradlew assembleDebug --no-daemon \
+          -Pandroid.useAndroidX=true \
+          -Pandroid.enableJetifier=true
 
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
