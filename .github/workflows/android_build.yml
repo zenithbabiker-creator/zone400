@@ -1,34 +1,14 @@
-name: Build Android APK
-
-on:
-  push:
-    branches: [ main ]
-  workflow_dispatch: 
-
-jobs:
-  build:
-    runs-on: ubuntu-latest
-
-    steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-
-    - name: Set up JDK 17
-      uses: actions/setup-java@v4
-      with:
-        distribution: 'temurin'
-        java-version: '17'
-        cache: 'gradle'
-
-    - name: Find Project and Build
+- name: Find Project and Build
       run: |
-        # 1. البحث عن مسار المشروع
-        SETTINGS_FILE=$(find . -name "settings.gradle*" -print -quit)
-        PROJECT_DIR=$(dirname "$SETTINGS_FILE")
+        # البحث عن ملف gradlew في أي مكان داخل المشروع
+        GRADLEW_PATH=$(find . -name "gradlew" -print -quit)
+        PROJECT_DIR=$(dirname "$GRADLEW_PATH")
         cd "$PROJECT_DIR"
+        echo "Working directory is: $(pwd)"
         
-        # 2. إصلاحات الـ Manifest والأيقونات
-        MANIFEST_PATH="app/src/main/AndroidManifest.xml"
+        # 1. إصلاحات الـ Manifest والأيقونات
+        # نبحث عن المسار الصحيح للمانيفست بالنسبة لمجلد الـ gradlew
+        MANIFEST_PATH=$(find . -name "AndroidManifest.xml" | grep "app/src/main" | head -n 1)
         if [ -f "$MANIFEST_PATH" ]; then
           sed -i 's|xmlns:tools="http://schemas.android.com/tools"||g' "$MANIFEST_PATH"
           sed -i 's|<manifest|<manifest xmlns:tools="http://schemas.android.com/tools"|g' "$MANIFEST_PATH"
@@ -37,20 +17,13 @@ jobs:
           sed -i 's|android:roundIcon="@mipmap/ic_launcher_round"|android:roundIcon="@android:mipmap/sym_def_app_icon"|g' "$MANIFEST_PATH"
         fi
 
-        # 3. إعدادات التوافق (تجاوز خطأ نسخة Kotlin)
+        # 2. إعدادات التوافق
         echo "kotlin.plugin.suppressVersionCompatibilityCheck=true" >> gradle.properties
         
-        # 4. بناء المشروع
+        # 3. بناء المشروع
         chmod +x gradlew
         ./gradlew assembleDebug --no-daemon \
           -Pandroid.useAndroidX=true \
           -Pandroid.enableJetifier=true \
           -Dorg.gradle.jvmargs="-Xmx2048m -XX:MaxMetaspaceSize=512m" \
           -x lint
-
-    - name: Upload APK Artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: Landscaping-App-Debug-APK
-        path: "**/build/outputs/apk/debug/app-debug.apk"
-        retention-days: 7
