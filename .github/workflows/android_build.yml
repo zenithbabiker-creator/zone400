@@ -20,53 +20,32 @@ jobs:
         java-version: '17'
         cache: 'gradle'
 
-    - name: Generate and Update Gradle Wrapper
+    - name: Find Project Root and Build
       run: |
-        GRADLEW_PATH=$(find . -name gradlew -print -quit)
-        cd "$(dirname "$GRADLEW_PATH")"
-        gradle wrapper --gradle-version 8.7 --distribution-type all
-        chmod +x gradlew
-
-    - name: Patch Manifest, Code Compatibility and Configure Gradle
-      run: |
-        GRADLEW_PATH=$(find . -name gradlew -print -quit)
-        PROJECT_ROOT=$(dirname "$GRADLEW_PATH")
-        cd "$PROJECT_ROOT"
+        # البحث عن ملف settings.gradle لتحديد مجلد المشروع الحقيقي
+        SETTINGS_FILE=$(find . -name "settings.gradle*" -print -quit)
+        if [ -z "$SETTINGS_FILE" ]; then
+          echo "Error: Could not find settings.gradle file."
+          exit 1
+        fi
         
-        # إعدادات الذاكرة
-        echo "android.useAndroidX=true" > gradle.properties
-        echo "android.enableJetifier=true" >> gradle.properties
+        # الانتقال إلى المجلد الذي يحتوي على المشروع
+        PROJECT_DIR=$(dirname "$SETTINGS_FILE")
+        echo "Project found in: $PROJECT_DIR"
+        cd "$PROJECT_DIR"
         
-        # ترقيع المانيفست (بدون رموز معقدة)
-        MANIFEST_PATH=$(find . -name "AndroidManifest.xml" -print -quit)
-        if [ -f "$MANIFEST_PATH" ]; then
-          sed -i 's|android:icon="@mipmap/ic_launcher"|android:icon="@android:mipmap/sym_def_app_icon"|g' "$MANIFEST_PATH"
+        # التأكد من وجود ملف gradlew وجعله قابلاً للتنفيذ
+        if [ ! -f "gradlew" ]; then
+            chmod +x gradlew || echo "gradlew not found, will use system gradle"
         fi
 
-        # معالجة ملف Step1_AreaCapture.kt (تم تنظيف الأوامر تماماً من أي رموز معقدة)
-        STEP1_PATH=$(find . -name "Step1_AreaCapture.kt" -print -quit)
-        if [ -f "$STEP1_PATH" ]; then
-          sed -i 's/captured_area_label/0.0/g' "$STEP1_PATH"
-          sed -i 's/points_count_label/0/g' "$STEP1_PATH"
-          sed -i 's/btn_unfreeze_frame/Unfreeze/g' "$STEP1_PATH"
-          sed -i 's/btn_freeze_frame/Freeze/g' "$STEP1_PATH"
-        fi
-
-        # حقن الاعتمادات
-        APP_GRADLE=$(find . -name "build.gradle.kts" | grep "app/build.gradle.kts" -m 1)
-        if [ -f "$APP_GRADLE" ]; then
-          sed -i '/dependencies {/a \    implementation("androidx.compose.material3:material3:1.2.1")' "$APP_GRADLE"
-        fi
-
-    - name: Build Debug APK
-      run: |
-        GRADLEW_PATH=$(find . -name gradlew -print -quit)
-        cd "$(dirname "$GRADLEW_PATH")"
+        # تنفيذ البناء
         ./gradlew assembleDebug --no-daemon
 
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
       with:
         name: Landscaping-App-Debug-APK
+        # البحث عن ملف الـ APK الناتج في أي مكان داخل مجلد المشروع
         path: "**/build/outputs/apk/debug/app-debug.apk"
         retention-days: 7
