@@ -36,6 +36,7 @@ jobs:
           sed -i 's|android:name="com.google.ar.core"|android:name="com.google.ar.core" tools:replace="android:value"|g' "$MANIFEST_PATH"
           sed -i 's|android:icon="@mipmap/ic_launcher"|android:icon="@android:mipmap/sym_def_app_icon"|g' "$MANIFEST_PATH"
           sed -i 's|android:roundIcon="@mipmap/ic_launcher_round"|android:roundIcon="@android:mipmap/sym_def_app_icon"|g' "$MANIFEST_PATH"
+          echo "Fixed Manifest and icons."
         fi
 
         # 3. التأكد من وجود ملف gradlew
@@ -43,11 +44,12 @@ jobs:
           gradle wrapper --gradle-version 8.7
         fi
         
-        # 4. بناء المشروع
+        # 4. بناء المشروع مع زيادة الذاكرة لمنع OutOfMemoryError
         chmod +x gradlew
         ./gradlew assembleDebug --no-daemon \
           -Pandroid.useAndroidX=true \
-          -Pandroid.enableJetifier=true
+          -Pandroid.enableJetifier=true \
+          -Dorg.gradle.jvmargs="-Xmx2048m -XX:MaxMetaspaceSize=512m"
 
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
