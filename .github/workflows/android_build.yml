@@ -20,32 +20,29 @@ jobs:
         java-version: '17'
         cache: 'gradle'
 
-    - name: Find Project Root and Build
+    - name: Find Project and Build
       run: |
-        # البحث عن ملف settings.gradle لتحديد مجلد المشروع الحقيقي
+        # 1. البحث عن مسار المشروع
         SETTINGS_FILE=$(find . -name "settings.gradle*" -print -quit)
-        if [ -z "$SETTINGS_FILE" ]; then
-          echo "Error: Could not find settings.gradle file."
-          exit 1
-        fi
-        
-        # الانتقال إلى المجلد الذي يحتوي على المشروع
         PROJECT_DIR=$(dirname "$SETTINGS_FILE")
-        echo "Project found in: $PROJECT_DIR"
         cd "$PROJECT_DIR"
-        
-        # التأكد من وجود ملف gradlew وجعله قابلاً للتنفيذ
-        if [ ! -f "gradlew" ]; then
-            chmod +x gradlew || echo "gradlew not found, will use system gradle"
-        fi
+        echo "Project found in: $PROJECT_DIR"
 
-        # تنفيذ البناء
+        # 2. إذا لم يكن gradlew موجوداً، سنقوم بتوليده فوراً
+        if [ ! -f "gradlew" ]; then
+          echo "gradlew not found. Generating wrapper..."
+          gradle wrapper --gradle-version 8.7
+        fi
+        
+        # 3. التأكد من صلاحية التنفيذ
+        chmod +x gradlew
+
+        # 4. بناء المشروع
         ./gradlew assembleDebug --no-daemon
 
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
       with:
         name: Landscaping-App-Debug-APK
-        # البحث عن ملف الـ APK الناتج في أي مكان داخل مجلد المشروع
         path: "**/build/outputs/apk/debug/app-debug.apk"
         retention-days: 7
