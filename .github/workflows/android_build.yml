@@ -1,13 +1,57 @@
-# 2. إصلاح تعارض الـ Manifest بإضافة xmlns:tools وتعديل الـ meta-data
+name: Build Android APK
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch: 
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'temurin'
+        java-version: '17'
+        cache: 'gradle'
+
+    - name: Find Project and Build
+      run: |
+        # 1. البحث عن مسار المشروع
+        SETTINGS_FILE=$(find . -name "settings.gradle*" -print -quit)
+        PROJECT_DIR=$(dirname "$SETTINGS_FILE")
+        cd "$PROJECT_DIR"
+        echo "Project found in: $PROJECT_DIR"
+        
+        # 2. إصلاح تعارض الـ Manifest
         MANIFEST_PATH="app/src/main/AndroidManifest.xml"
         if [ -f "$MANIFEST_PATH" ]; then
-          # إضافة تعريف xmlns:tools إذا لم يكن موجوداً
+          # إزالة التعريف القديم إذا وجد لتجنب التكرار ثم إضافة الجديد
+          sed -i 's|xmlns:tools="http://schemas.android.com/tools"||g' "$MANIFEST_PATH"
           sed -i 's|<manifest|<manifest xmlns:tools="http://schemas.android.com/tools"|g' "$MANIFEST_PATH"
-          
-          # تعديل السطر ليحتوي على tools:replace بشكل صحيح
-          # نبحث عن السطر الذي يحتوي على com.google.ar.core ونستبدله بالسطر المدعم بـ tools:replace
           sed -i 's|android:name="com.google.ar.core"|android:name="com.google.ar.core" tools:replace="android:value"|g' "$MANIFEST_PATH"
-          
-          echo "Applied fix with namespace to AndroidManifest.xml"
-          cat "$MANIFEST_PATH" # طباعة الملف للتحقق من التغييرات في السجل
+          echo "Applied fix to AndroidManifest.xml"
         fi
+
+        # 3. التأكد من وجود ملف gradlew وتوليده
+        if [ ! -f "gradlew" ]; then
+          gradle wrapper --gradle-version 8.7
+        fi
+        
+        # 4. بناء المشروع
+        chmod +x gradlew
+        ./gradlew assembleDebug --no-daemon \
+          -Pandroid.useAndroidX=true \
+          -Pandroid.enableJetifier=true
+
+    - name: Upload APK Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: Landscaping-App-Debug-APK
+        path: "**/build/outputs/apk/debug/app-debug.apk"
+        retention-days: 7
