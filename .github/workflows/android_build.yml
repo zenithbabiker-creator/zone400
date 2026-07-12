@@ -1,56 +1,17 @@
-name: Build Android APK
-
-on:
-  push:
-    branches: [ main ]
-  workflow_dispatch: 
-
-jobs:
-  build:
-    runs-on: ubuntu-latest
-
-    steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-
-    - name: Set up JDK 17
-      uses: actions/setup-java@v4
-      with:
-        distribution: 'temurin'
-        java-version: '17'
-        cache: 'gradle'
-
-    - name: Find Project and Build
+- name: Find Project and Build
       run: |
         SETTINGS_FILE=$(find . -name "settings.gradle*" -print -quit)
         PROJECT_DIR=$(dirname "$SETTINGS_FILE")
         cd "$PROJECT_DIR"
         
-        APP_BUILD_GRADLE=$(grep -l "com.android.application" **/build.gradle | head -n 1)
-        MANIFEST_PATH=$(find . -name "AndroidManifest.xml" | grep "src/main/AndroidManifest.xml" | head -n 1)
+        # 1. إصلاحات برمجية سريعة (استبدال الدوال القديمة بجديدتها)
+        # هذا السطر يحاول معالجة خطأ "onConfirmed" و "onNext" و "ArSceneView"
+        find app/src/main/java -name "*.kt" -exec sed -i 's|ArSceneView|io.github.sceneview.compose.ArSceneView|g' {} +
         
-        if [ -f "$MANIFEST_PATH" ]; then
-          sed -i 's|xmlns:tools="http://schemas.android.com/tools"||g' "$MANIFEST_PATH"
-          sed -i 's|<manifest|<manifest xmlns:tools="http://schemas.android.com/tools"|g' "$MANIFEST_PATH"
-          sed -i 's|android:name="com.google.ar.core"|android:name="com.google.ar.core" tools:replace="android:value"|g' "$MANIFEST_PATH"
-          sed -i 's|android:icon="@mipmap/ic_launcher"|android:icon="@android:mipmap/sym_def_app_icon"|g' "$MANIFEST_PATH"
-          sed -i 's|android:roundIcon="@mipmap/ic_launcher_round"|android:roundIcon="@android:mipmap/sym_def_app_icon"|g' "$MANIFEST_PATH"
-        fi
-        
-        if [ -f "$APP_BUILD_GRADLE" ]; then
-          sed -i 's|kotlinCompilerExtensionVersion = "1.5.14"|kotlinCompilerExtensionVersion = "1.5.15"|g' "$APP_BUILD_GRADLE"
-        fi
-        
+        # 2. بناء المشروع مع تجاوز أخطاء Lint
         chmod +x gradlew
         ./gradlew assembleDebug --no-daemon \
           -Pandroid.useAndroidX=true \
           -Pandroid.enableJetifier=true \
           -Dorg.gradle.jvmargs="-Xmx2048m -XX:MaxMetaspaceSize=512m" \
           -x lint
-
-    - name: Upload APK Artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: Landscaping-App-Debug-APK
-        path: "**/build/outputs/apk/debug/app-debug.apk"
-        retention-days: 7
