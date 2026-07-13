@@ -18,19 +18,17 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Build Project with Gradle
-        # سنقوم بتثبيت gradle ثم بناء المشروع
+      - name: Build Project
         run: |
-          # الانتقال للمجلد الصحيح
           cd LandscapeDesignApp/LandscapeDesignApp
           
-          # تثبيت gradle محلياً إذا لم يكن موجوداً
-          gradle wrapper
+          # 1. إصلاح تعارض المانيفست (إضافة tools:replace)
+          sed -i 's|android:value="required"|android:value="required" tools:replace="android:value"|g' app/src/main/AndroidManifest.xml
           
-          # إعدادات التوافق
+          # 2. توليد gradlew والبناء
+          gradle wrapper
           echo "kotlin.plugin.suppressVersionCompatibilityCheck=true" >> gradle.properties
           
-          # تنفيذ البناء
           chmod +x gradlew
           ./gradlew assembleDebug -Pandroid.useAndroidX=true -Pandroid.enableJetifier=true -x lint
 
