@@ -21,24 +21,27 @@ jobs:
 
       - name: Build Project
         run: |
-          # الانتقال للمجلد الذي حددته سابقاً في الـ logs
-          cd LandscapeDesignApp/LandscapeDesignApp
+          # العودة للمجلد الرئيسي حيث يوجد ملف gradlew
+          cd .
           
-          # التحقق من وجود الملف قبل محاولة تنفيذه
+          # التحقق من وجود الملف في المجلد الحالي
           if [ -f "gradlew" ]; then
-            echo "Gradlew found!"
+            echo "Gradlew found in root!"
           else
-            echo "Gradlew not found in $(pwd)! Listing files:"
-            ls -F
+            echo "Error: gradlew not found in root!"
             exit 1
           fi
           
           # إعدادات التوافق
           echo "kotlin.plugin.suppressVersionCompatibilityCheck=true" >> gradle.properties
           
-          # تنفيذ البناء
+          # تنفيذ البناء للمشروع الموجود في المجلد الفرعي
           chmod +x gradlew
-          ./gradlew assembleDebug --no-daemon -Pandroid.useAndroidX=true -Pandroid.enableJetifier=true -Dorg.gradle.jvmargs="-Xmx2048m -XX:MaxMetaspaceSize=512m" -x lint
+          ./gradlew :LandscapeDesignApp:LandscapeDesignApp:assembleDebug \
+            -Pandroid.useAndroidX=true \
+            -Pandroid.enableJetifier=true \
+            -Dorg.gradle.jvmargs="-Xmx2048m -XX:MaxMetaspaceSize=512m" \
+            -x lint
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
