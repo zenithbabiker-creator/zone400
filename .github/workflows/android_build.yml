@@ -21,14 +21,22 @@ jobs:
 
       - name: Build Project
         run: |
-          PROJECT_DIR=$(find . -name "gradlew" -exec dirname {} \; | head -n 1)
-          cd "$PROJECT_DIR"
-          MANIFEST_PATH="app/src/main/AndroidManifest.xml"
-          if [ -f "$MANIFEST_PATH" ]; then
-            sed -i 's|android:icon="@mipmap/ic_launcher"|android:icon="@android:mipmap/sym_def_app_icon"|g' "$MANIFEST_PATH"
-            sed -i 's|android:roundIcon="@mipmap/ic_launcher_round"|android:roundIcon="@android:mipmap/sym_def_app_icon"|g' "$MANIFEST_PATH"
+          # الانتقال للمجلد الذي حددته سابقاً في الـ logs
+          cd LandscapeDesignApp/LandscapeDesignApp
+          
+          # التحقق من وجود الملف قبل محاولة تنفيذه
+          if [ -f "gradlew" ]; then
+            echo "Gradlew found!"
+          else
+            echo "Gradlew not found in $(pwd)! Listing files:"
+            ls -F
+            exit 1
           fi
+          
+          # إعدادات التوافق
           echo "kotlin.plugin.suppressVersionCompatibilityCheck=true" >> gradle.properties
+          
+          # تنفيذ البناء
           chmod +x gradlew
           ./gradlew assembleDebug --no-daemon -Pandroid.useAndroidX=true -Pandroid.enableJetifier=true -Dorg.gradle.jvmargs="-Xmx2048m -XX:MaxMetaspaceSize=512m" -x lint
 
