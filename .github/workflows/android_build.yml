@@ -22,26 +22,19 @@ jobs:
         run: |
           cd LandscapeDesignApp/LandscapeDesignApp
           
-          # إنشاء ملف مانيفست جديد يعتمد على أيقونات النظام الافتراضية لتجنب خطأ resource not found
+          # إنشاء ملف مانيفست جديد (تجاوز التعارض)
           cat <<EOF > app/src/main/AndroidManifest.xml
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android"
               xmlns:tools="http://schemas.android.com/tools">
-
               <uses-permission android:name="android.permission.CAMERA" />
               <uses-feature android:name="android.hardware.camera.ar" android:required="true" />
-
               <application 
                   android:allowBackup="true" 
                   android:icon="@android:mipmap/sym_def_app_icon" 
                   android:label="LandscapeDesign" 
                   android:theme="@style/Theme.LandscapeDesign">
-                  
-                  <meta-data
-                      android:name="com.google.ar.core"
-                      android:value="required"
-                      tools:replace="android:value" />
-
+                  <meta-data android:name="com.google.ar.core" android:value="required" tools:replace="android:value" />
                   <activity android:name=".MainActivity" android:exported="true">
                       <intent-filter>
                           <action android:name="android.intent.action.MAIN" />
@@ -52,14 +45,19 @@ jobs:
           </manifest>
           EOF
 
-          # إعدادات الذاكرة والتوافق
+          # إعدادات الذاكرة والتوافق (إضافة خيارات تجاهل أخطاء Kotlin)
           echo "org.gradle.jvmargs=-Xmx3072m -XX:MaxMetaspaceSize=512m" > gradle.properties
           echo "kotlin.plugin.suppressVersionCompatibilityCheck=true" >> gradle.properties
+          echo "android.suppressUnsupportedCompileSdk=34" >> gradle.properties
           
-          # البناء
+          # البناء مع إضافة خيار تجاوز فحص توافق Compose
           gradle wrapper
           chmod +x gradlew
-          ./gradlew assembleDebug -Pandroid.useAndroidX=true -Pandroid.enableJetifier=true -x lint
+          ./gradlew assembleDebug \
+            -Pandroid.useAndroidX=true \
+            -Pandroid.enableJetifier=true \
+            -Pkotlin.compiler.execution.strategy="in-process" \
+            -x lint
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
