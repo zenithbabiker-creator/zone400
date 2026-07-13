@@ -1,3 +1,4 @@
+// الملف الموجود داخل مجلد (app)
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
@@ -14,9 +15,8 @@ android {
         targetSdk = 34
         versionCode = 1
         versionName = "1.0"
-        vectorDrawables.useSupportLibrary = true
     }
-
+    
     buildFeatures {
         compose = true
     }
@@ -38,8 +38,8 @@ android {
 dependencies {
     // ARCore
     implementation("com.google.ar:core:1.44.0")
-
-    // Sceneview القديم المتوافق مع كودك
+    
+    // Sceneview المتوافق مع كودك
     implementation("io.github.sceneview:arsceneview:0.10.0")
 
     // Jetpack Compose
@@ -47,7 +47,7 @@ dependencies {
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-graphics")
     implementation("androidx.compose.ui:ui-tooling-preview")
-    implementation("androidx.compose.material3:material3:1.1.2") // إصدار مستقر ومتوافق
+    implementation("androidx.compose.material3:material3:1.1.2")
     implementation("androidx.compose.material:material-icons-extended")
     implementation("androidx.activity:activity-compose:1.9.0")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.2")
