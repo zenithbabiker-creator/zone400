@@ -53,7 +53,7 @@ dependencies {
     implementation("com.google.ar:core:1.44.0")
 
     // Sceneview for Jetpack Compose + ARCore + Filament rendering
-    implementation("io.github.sceneview:arsceneview:2.2.1")
+    implementation("io.github.sceneview:arsceneview:0.10.0")
 
     // Jetpack Compose
     implementation(platform("androidx.compose:compose-bom:2024.06.00"))
