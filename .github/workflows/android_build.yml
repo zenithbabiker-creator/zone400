@@ -22,20 +22,21 @@ jobs:
         run: |
           cd LandscapeDesignApp/LandscapeDesignApp
           
-          # 1. إنشاء ملف Manifest مصحح يتجاوز التعارض
-          # نستخدم tools:replace="android:value" لحل مشكلة arsceneview
+          # إنشاء ملف مانيفست جديد يعتمد على أيقونات النظام الافتراضية لتجنب خطأ resource not found
           cat <<EOF > app/src/main/AndroidManifest.xml
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-              xmlns:tools="http://schemas.android.com/tools"
-              package="com.example.landscapedesign">
+              xmlns:tools="http://schemas.android.com/tools">
 
               <uses-permission android:name="android.permission.CAMERA" />
               <uses-feature android:name="android.hardware.camera.ar" android:required="true" />
 
-              <application android:allowBackup="true" android:icon="@mipmap/ic_launcher" android:label="LandscapeDesign" android:theme="@style/Theme.LandscapeDesign">
+              <application 
+                  android:allowBackup="true" 
+                  android:icon="@android:mipmap/sym_def_app_icon" 
+                  android:label="LandscapeDesign" 
+                  android:theme="@style/Theme.LandscapeDesign">
                   
-                  <!-- الإضافة التي تحل التعارض -->
                   <meta-data
                       android:name="com.google.ar.core"
                       android:value="required"
@@ -51,11 +52,11 @@ jobs:
           </manifest>
           EOF
 
-          # 2. إعدادات الذاكرة والتوافق (لحل مشكلة التوقف المفاجئ)
+          # إعدادات الذاكرة والتوافق
           echo "org.gradle.jvmargs=-Xmx3072m -XX:MaxMetaspaceSize=512m" > gradle.properties
           echo "kotlin.plugin.suppressVersionCompatibilityCheck=true" >> gradle.properties
           
-          # 3. بناء المشروع
+          # البناء
           gradle wrapper
           chmod +x gradlew
           ./gradlew assembleDebug -Pandroid.useAndroidX=true -Pandroid.enableJetifier=true -x lint
