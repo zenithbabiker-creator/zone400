@@ -1,29 +1,48 @@
-- name: Find Project and Build
+name: Build Android APK
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch: 
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'temurin'
+        java-version: '17'
+        cache: 'gradle'
+
+    - name: Build Project
       run: |
-        # البحث عن ملف gradlew في أي مكان داخل المشروع
-        GRADLEW_PATH=$(find . -name "gradlew" -print -quit)
-        PROJECT_DIR=$(dirname "$GRADLEW_PATH")
-        cd "$PROJECT_DIR"
-        echo "Working directory is: $(pwd)"
+        # التأكد من صلاحية الملف التنفيذي
+        chmod +x gradlew
         
-        # 1. إصلاحات الـ Manifest والأيقونات
-        # نبحث عن المسار الصحيح للمانيفست بالنسبة لمجلد الـ gradlew
-        MANIFEST_PATH=$(find . -name "AndroidManifest.xml" | grep "app/src/main" | head -n 1)
+        # 1. إصلاحات المانيفست في المسار الصحيح
+        MANIFEST_PATH="LandscapeDesignApp/LandscapeDesignApp/app/src/main/AndroidManifest.xml"
         if [ -f "$MANIFEST_PATH" ]; then
-          sed -i 's|xmlns:tools="http://schemas.android.com/tools"||g' "$MANIFEST_PATH"
-          sed -i 's|<manifest|<manifest xmlns:tools="http://schemas.android.com/tools"|g' "$MANIFEST_PATH"
-          sed -i 's|android:name="com.google.ar.core"|android:name="com.google.ar.core" tools:replace="android:value"|g' "$MANIFEST_PATH"
           sed -i 's|android:icon="@mipmap/ic_launcher"|android:icon="@android:mipmap/sym_def_app_icon"|g' "$MANIFEST_PATH"
           sed -i 's|android:roundIcon="@mipmap/ic_launcher_round"|android:roundIcon="@android:mipmap/sym_def_app_icon"|g' "$MANIFEST_PATH"
         fi
 
-        # 2. إعدادات التوافق
+        # 2. بناء المشروع (مع تجاوز التوافق)
         echo "kotlin.plugin.suppressVersionCompatibilityCheck=true" >> gradle.properties
         
-        # 3. بناء المشروع
-        chmod +x gradlew
-        ./gradlew assembleDebug --no-daemon \
+        ./gradlew :LandscapeDesignApp:LandscapeDesignApp:assembleDebug \
           -Pandroid.useAndroidX=true \
           -Pandroid.enableJetifier=true \
           -Dorg.gradle.jvmargs="-Xmx2048m -XX:MaxMetaspaceSize=512m" \
           -x lint
+
+    - name: Upload APK
+      uses: actions/upload-artifact@v4
+      with:
+        name: Landscaping-App
+        path: "**/build/outputs/apk/debug/app-debug.apk"
