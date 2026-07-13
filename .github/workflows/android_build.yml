@@ -22,20 +22,43 @@ jobs:
         run: |
           cd LandscapeDesignApp/LandscapeDesignApp
           
-          # 1. تحديث إعدادات الذاكرة والتوافق (لحل مشكلة الذاكرة وتوافق Kotlin)
-          echo "org.gradle.jvmargs=-Xmx3072m -XX:MaxMetaspaceSize=512m -Dfile.encoding=UTF-8" > gradle.properties
+          # 1. إنشاء ملف Manifest مصحح يتجاوز التعارض
+          # نستخدم tools:replace="android:value" لحل مشكلة arsceneview
+          cat <<EOF > app/src/main/AndroidManifest.xml
+          <?xml version="1.0" encoding="utf-8"?>
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+              xmlns:tools="http://schemas.android.com/tools"
+              package="com.example.landscapedesign">
+
+              <uses-permission android:name="android.permission.CAMERA" />
+              <uses-feature android:name="android.hardware.camera.ar" android:required="true" />
+
+              <application android:allowBackup="true" android:icon="@mipmap/ic_launcher" android:label="LandscapeDesign" android:theme="@style/Theme.LandscapeDesign">
+                  
+                  <!-- الإضافة التي تحل التعارض -->
+                  <meta-data
+                      android:name="com.google.ar.core"
+                      android:value="required"
+                      tools:replace="android:value" />
+
+                  <activity android:name=".MainActivity" android:exported="true">
+                      <intent-filter>
+                          <action android:name="android.intent.action.MAIN" />
+                          <category android:name="android.intent.category.LAUNCHER" />
+                      </intent-filter>
+                  </activity>
+              </application>
+          </manifest>
+          EOF
+
+          # 2. إعدادات الذاكرة والتوافق (لحل مشكلة التوقف المفاجئ)
+          echo "org.gradle.jvmargs=-Xmx3072m -XX:MaxMetaspaceSize=512m" > gradle.properties
           echo "kotlin.plugin.suppressVersionCompatibilityCheck=true" >> gradle.properties
-          echo "android.suppressUnsupportedCompileSdk=34" >> gradle.properties
           
-          # 2. إنشاء gradle wrapper
+          # 3. بناء المشروع
           gradle wrapper
-          
-          # 3. البناء
           chmod +x gradlew
-          ./gradlew assembleDebug \
-            -Pandroid.useAndroidX=true \
-            -Pandroid.enableJetifier=true \
-            -x lint
+          ./gradlew assembleDebug -Pandroid.useAndroidX=true -Pandroid.enableJetifier=true -x lint
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
