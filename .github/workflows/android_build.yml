@@ -22,30 +22,20 @@ jobs:
         run: |
           cd LandscapeDesignApp/LandscapeDesignApp
           
-          # إنشاء ملف مانيفست جديد ومعالج مع وضع tools:replace
-          cat <<EOF > app/src/main/AndroidManifest.xml
-          <?xml version="1.0" encoding="utf-8"?>
-          <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-              xmlns:tools="http://schemas.android.com/tools"
-              package="com.example.landscapedesign">
-              
-              <application>
-                  <meta-data
-                      android:name="com.google.ar.core"
-                      android:value="required"
-                      tools:replace="android:value" />
-              </application>
-          </manifest>
-          EOF
-          
-          # ملاحظة: إذا كان ملفك الأصلي يحتوي على Permissions أو Activities، 
-          # هذا الكود سيحتاج دمجاً يدوياً. إذا فشل البناء، أخبرني لأعطيك الكود المدمج كاملاً.
-          
-          gradle wrapper
+          # 1. تحديث إعدادات الذاكرة والتوافق (لحل مشكلة الذاكرة وتوافق Kotlin)
+          echo "org.gradle.jvmargs=-Xmx3072m -XX:MaxMetaspaceSize=512m -Dfile.encoding=UTF-8" > gradle.properties
           echo "kotlin.plugin.suppressVersionCompatibilityCheck=true" >> gradle.properties
+          echo "android.suppressUnsupportedCompileSdk=34" >> gradle.properties
           
+          # 2. إنشاء gradle wrapper
+          gradle wrapper
+          
+          # 3. البناء
           chmod +x gradlew
-          ./gradlew assembleDebug -Pandroid.useAndroidX=true -Pandroid.enableJetifier=true -x lint
+          ./gradlew assembleDebug \
+            -Pandroid.useAndroidX=true \
+            -Pandroid.enableJetifier=true \
+            -x lint
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
