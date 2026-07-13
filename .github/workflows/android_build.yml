@@ -17,34 +17,22 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '17'
-          cache: 'gradle'
 
-      - name: Build Project
+      - name: Build Project with Gradle
+        # سنقوم بتثبيت gradle ثم بناء المشروع
         run: |
-          # العثور على المجلد الذي يحتوي على gradlew
-          GRADLEW_PATH=$(find . -name "gradlew" -print -quit)
+          # الانتقال للمجلد الصحيح
+          cd LandscapeDesignApp/LandscapeDesignApp
           
-          if [ -z "$GRADLEW_PATH" ]; then
-            echo "خطأ: لم يتم العثور على ملف gradlew في أي مكان في المستودع!"
-            echo "محتويات المجلد الحالي:"
-            ls -R
-            exit 1
-          fi
-          
-          PROJECT_ROOT=$(dirname "$GRADLEW_PATH")
-          echo "تم العثور على gradlew في: $PROJECT_ROOT"
-          cd "$PROJECT_ROOT"
+          # تثبيت gradle محلياً إذا لم يكن موجوداً
+          gradle wrapper
           
           # إعدادات التوافق
           echo "kotlin.plugin.suppressVersionCompatibilityCheck=true" >> gradle.properties
           
           # تنفيذ البناء
           chmod +x gradlew
-          ./gradlew assembleDebug \
-            -Pandroid.useAndroidX=true \
-            -Pandroid.enableJetifier=true \
-            -Dorg.gradle.jvmargs="-Xmx2048m -XX:MaxMetaspaceSize=512m" \
-            -x lint
+          ./gradlew assembleDebug -Pandroid.useAndroidX=true -Pandroid.enableJetifier=true -x lint
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
