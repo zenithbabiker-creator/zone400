@@ -4,7 +4,7 @@ on:
   push:
     branches: [ main ]
   workflow_dispatch: 
-  
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -20,19 +20,21 @@ jobs:
 
       - name: Build with Gradle
         run: |
-          # تنظيف الكاش القديم تماماً لتجنب خطأ Dexing
-          rm -rf ~/.gradle/caches/
-          
-          echo "org.gradle.jvmargs=-Xmx6g -XX:MaxMetaspaceSize=2g" > gradle.properties
+          # الانتقال لمجلد المشروع
           cd LandscapeDesignApp/LandscapeDesignApp
           
-          # إصلاحات الـ Manifest
+          # 1. إصلاح ملف Manifest للتعارضات والأيقونة
           sed -i 's|android:icon="@mipmap/ic_launcher"|android:icon="@android:drawable/sym_def_app_icon"|g' app/src/main/AndroidManifest.xml
           sed -i 's|<manifest |<manifest xmlns:tools="http://schemas.android.com/tools" |g' app/src/main/AndroidManifest.xml
           sed -i 's|android:name="com.google.ar.core"|android:name="com.google.ar.core" tools:replace="android:value"|g' app/src/main/AndroidManifest.xml
           
-          # البناء مع تنظيف شامل
-          gradle clean assembleDebug --no-daemon -Pandroid.useAndroidX=true -Pandroid.enableJetifier=true -x lint -x test
+          # 2. البناء مع تمرير الذاكرة بشكل مباشر لتفادي Java Heap Space
+          # نستخدم gradle مباشرة مع تمرير -Dorg.gradle.jvmargs
+          gradle clean assembleDebug \
+            -Dorg.gradle.jvmargs="-Xmx4g -XX:MaxMetaspaceSize=1g" \
+            -Pandroid.useAndroidX=true \
+            -Pandroid.enableJetifier=true \
+            -x lint -x test
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
