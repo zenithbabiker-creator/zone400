@@ -20,19 +20,19 @@ jobs:
 
       - name: Build with Gradle
         run: |
+          # تنظيف الكاش القديم تماماً لتجنب خطأ Dexing
+          rm -rf ~/.gradle/caches/
+          
           echo "org.gradle.jvmargs=-Xmx6g -XX:MaxMetaspaceSize=2g" > gradle.properties
           cd LandscapeDesignApp/LandscapeDesignApp
           
-          # 1. إصلاح الأيقونة
+          # إصلاحات الـ Manifest
           sed -i 's|android:icon="@mipmap/ic_launcher"|android:icon="@android:drawable/sym_def_app_icon"|g' app/src/main/AndroidManifest.xml
-          
-          # 2. إصلاح تعارض الـ Manifest عبر إضافة tools:replace للـ meta-data
-          # سنضيف xmlns:tools إذا لم تكن موجودة ونضيف الخاصية المطلوبة
           sed -i 's|<manifest |<manifest xmlns:tools="http://schemas.android.com/tools" |g' app/src/main/AndroidManifest.xml
           sed -i 's|android:name="com.google.ar.core"|android:name="com.google.ar.core" tools:replace="android:value"|g' app/src/main/AndroidManifest.xml
           
-          # 3. البناء
-          gradle clean assembleDebug -Pandroid.useAndroidX=true -Pandroid.enableJetifier=true -x lint -x test
+          # البناء مع تنظيف شامل
+          gradle clean assembleDebug --no-daemon -Pandroid.useAndroidX=true -Pandroid.enableJetifier=true -x lint -x test
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
