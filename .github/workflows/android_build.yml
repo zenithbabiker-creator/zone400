@@ -4,7 +4,7 @@ on:
   push:
     branches: [ main ]
   workflow_dispatch: 
-  
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -18,50 +18,24 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Build Project
+      - name: Build with Gradle
         run: |
+          # 1. إعداد الذاكرة لمنع خطأ OutOfMemory
+          echo "org.gradle.jvmargs=-Xmx6g -XX:MaxMetaspaceSize=2g" > gradle.properties
+          
+          # 2. الانتقال إلى المجلد الذي يحتوي على ملف build.gradle.kts الخاص بالتطبيق
           cd LandscapeDesignApp/LandscapeDesignApp
           
-          # 1. تحديث إعدادات الذاكرة للـ Gradle لتجنب خطأ Garbage Collector
-          echo "org.gradle.jvmargs=-Xmx3072m -XX:MaxMetaspaceSize=512m" > gradle.properties
+          # 3. إصلاح مشكلة الأيقونة المفقودة عبر التعديل النصي (sed)
+          # نستخدم المسار النسبي من داخل مجلد المشروع
+          sed -i 's|android:icon="@mipmap/ic_launcher"|android:icon="@android:drawable/sym_def_app_icon"|g' app/src/main/AndroidManifest.xml
           
-          # 2. إنشاء ملف مانيفست نظيف ومتوافق (مع تجاهل الـ package namespace)
-          cat <<EOF > app/src/main/AndroidManifest.xml
-          <?xml version="1.0" encoding="utf-8"?>
-          <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-              xmlns:tools="http://schemas.android.com/tools">
-              
-              <uses-permission android:name="android.permission.CAMERA" />
-              <uses-feature android:name="android.hardware.camera.ar" android:required="true" />
-              
-              <application 
-                  android:allowBackup="true" 
-                  android:icon="@android:mipmap/sym_def_app_icon" 
-                  android:label="LandscapeDesign" 
-                  android:theme="@style/Theme.LandscapeDesign">
-                  
-                  <meta-data 
-                      android:name="com.google.ar.core" 
-                      android:value="required" 
-                      tools:replace="android:value" />
-                      
-                  <activity android:name=".MainActivity" android:exported="true">
-                      <intent-filter>
-                          <action android:name="android.intent.action.MAIN" />
-                          <category android:name="android.intent.category.LAUNCHER" />
-                      </intent-filter>
-                  </activity>
-              </application>
-          </manifest>
-          EOF
-          
-          # 3. بناء المشروع باستخدام الـ Wrapper
-          gradle wrapper
-          chmod +x gradlew
-          ./gradlew assembleDebug -Pandroid.useAndroidX=true -Pandroid.enableJetifier=true -x lint
+          # 4. تنظيف المشروع والبناء باستخدام Gradle العام
+          # تم استبعاد test و lint لتوفير الذاكرة وسرعة البناء
+          gradle clean assembleDebug -Pandroid.useAndroidX=true -Pandroid.enableJetifier=true -x lint -x test
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Landscaping-App
-          path: "**/build/outputs/apk/debug/app-debug.apk"
+          name: LandscapeDesignApp
+          path: LandscapeDesignApp/LandscapeDesignApp/app/build/outputs/apk/debug/app-debug.apk
