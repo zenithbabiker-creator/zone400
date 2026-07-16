@@ -1,8 +1,9 @@
 // الملف الموجود داخل مجلد (app)
 plugins {
-    id("com.android.application")
-    id("org.jetbrains.kotlin.android")
-    id("kotlin-parcelize")
+    id("com.android.application") version "8.5.0" apply false
+    id("org.jetbrains.kotlin.android") version "1.9.24" apply false
+    // احذف الـ version من هنا لأنه يسبب التعارض
+    id("org.jetbrains.kotlin.plugin.parcelize") apply false 
 }
 
 android {
