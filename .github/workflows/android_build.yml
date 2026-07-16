@@ -20,20 +20,26 @@ jobs:
 
       - name: Grant execute permission for gradlew
         run: |
-          # إضافة هذه الخطوة ضرورية جداً للعمل على بيئة GitHub Actions
-          chmod +x LandscapeDesignApp/LandscapeDesignApp/gradlew
+          # سنقوم بالبحث عن مكان وجود الملف وتصحيح الصلاحيات أينما كان
+          find . -name "gradlew" -exec chmod +x {} \;
 
       - name: Build with Gradle
         run: |
-          # الانتقال لمجلد المشروع
-          cd LandscapeDesignApp/LandscapeDesignApp
+          # نحدد المسار الذي يحتوي على ملف build.gradle
+          # سنقوم بالبحث عن المجلد الذي يحتوي على المشروع
+          PROJECT_DIR=$(find . -name "build.gradle*" -exec dirname {} \; | head -n 1)
+          cd "$PROJECT_DIR"
           
           # 1. إصلاح ملف Manifest للتعارضات والأيقونة
-          sed -i 's|android:icon="@mipmap/ic_launcher"|android:icon="@android:drawable/sym_def_app_icon"|g' app/src/main/AndroidManifest.xml
-          sed -i 's|<manifest |<manifest xmlns:tools="http://schemas.android.com/tools" |g' app/src/main/AndroidManifest.xml
-          sed -i 's|android:name="com.google.ar.core"|android:name="com.google.ar.core" tools:replace="android:value"|g' app/src/main/AndroidManifest.xml
+          # نستخدم المسار النسبي بناءً على موقع ملف build.gradle
+          MANIFEST_PATH="app/src/main/AndroidManifest.xml"
+          if [ -f "$MANIFEST_PATH" ]; then
+            sed -i 's|android:icon="@mipmap/ic_launcher"|android:icon="@android:drawable/sym_def_app_icon"|g' "$MANIFEST_PATH"
+            sed -i 's|<manifest |<manifest xmlns:tools="http://schemas.android.com/tools" |g' "$MANIFEST_PATH"
+            sed -i 's|android:name="com.google.ar.core"|android:name="com.google.ar.core" tools:replace="android:value"|g' "$MANIFEST_PATH"
+          fi
           
-          # 2. البناء مع تمرير الذاكرة وتخطي المهام غير الضرورية
+          # 2. البناء مع تمرير الذاكرة وتخطي الاختبارات
           ./gradlew clean assembleDebug \
             -Dorg.gradle.jvmargs="-Xmx4g -XX:MaxMetaspaceSize=1g" \
             -Pandroid.useAndroidX=true \
@@ -44,4 +50,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: LandscapeDesignApp
-          path: LandscapeDesignApp/LandscapeDesignApp/app/build/outputs/apk/debug/app-debug.apk
+          # البحث عن ملف الـ APK الناتج في أي مكان داخل المجلد
+          path: "**/app-debug.apk"
