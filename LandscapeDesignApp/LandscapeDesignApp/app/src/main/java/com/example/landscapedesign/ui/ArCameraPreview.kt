@@ -5,15 +5,18 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.AndroidView
 import com.google.ar.core.Config
 import io.github.sceneview.ar.ArSceneView
+import com.example.landscapedesign.model.Point3D
 
 @Composable
 fun ArCameraPreview(
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    boundaryPoints: List<Point3D> = emptyList(),
+    isFrozen: Boolean = false,
+    onPlaneTap: (Point3D) -> Unit = {}
 ) {
     AndroidView(
         factory = { context ->
             ArSceneView(context).apply {
-                // في إصدار 0.10.0، نقوم بضبط إعدادات الجلسة مباشرة
                 val session = engine.createSession()
                 val config = Config(session).apply {
                     planeFindingMode = Config.PlaneFindingMode.HORIZONTAL
